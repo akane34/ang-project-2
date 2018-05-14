@@ -11,7 +11,7 @@ function findById(id, res, sendResponse) {
 }
 
 function findByPublisher(idPublisher, res, sendResponse) {
-    persistence.findByIdElement({idPublisher: idPublisher}, COLLECTION, res, sendResponse);
+    persistence.findAllByElement({idPublisher: idPublisher}, COLLECTION, res, sendResponse);
 }
 
 function findByKeyWord(keyWord, res, sendResponse) {
@@ -82,7 +82,7 @@ function createCleanAdvertising(advertising){
 
 exports.findAll = findAll;
 exports.findById = findById;
-exports.findByPublisher = findByPublisher;
+exports.findByProvider = findByPublisher;
 exports.findByKeyWord = findByKeyWord;
 exports.create = create;
 exports.update = update;
