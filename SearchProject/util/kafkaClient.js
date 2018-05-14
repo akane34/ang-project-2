@@ -3,7 +3,8 @@ var kafka = require('kafka-node');
 var kafkaConsumer;
 var kafkaProducer;
 
-const TOPIC = "lumenconcept.search";
+const TOPIC_PRODUCER = "lumenconcept.search";
+const TOPIC_CONSUMER = "lumenconcept.trending";
 const KAFKA_HOST = process.env.KAFKA_SERVER + ':' + process.env.KAFKA_PORT;
 
 // public methods
@@ -32,7 +33,7 @@ function suscribe(callback) {
 function notify(params, callback) {
     var producer = getProducer(),
         payloads = [
-            { topic: TOPIC, messages: params, partition: 0 }
+            { topic: TOPIC_PRODUCER, messages: params, partition: 0 }
         ];
 
     producer.on('ready', function () {
@@ -45,7 +46,7 @@ function notify(params, callback) {
     });
 
     producer.send(payloads, function (err, data) {
-        console.log('Connecting to... ', KAFKA_HOST, ' topic:', TOPIC);
+        console.log('Connecting to... ', KAFKA_HOST, ' topic:', TOPIC_PRODUCER);
         if(callback) callback(err || data);
     });
 }
@@ -54,7 +55,7 @@ function getConsumer() {
     if (!kafkaConsumer) {
         var Consumer = kafka.Consumer,
             client = new kafka.KafkaClient({kafkaHost: KAFKA_HOST}),
-            payloads = [{ topic: TOPIC, offset: 0}],
+            payloads = [{ topic: TOPIC_CONSUMER, offset: 0}],
             options = {autoCommit: false};
         kafkaConsumer = new Consumer(client, payloads, options);
     }

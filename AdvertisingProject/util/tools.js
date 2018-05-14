@@ -1,5 +1,3 @@
-var kafka = require('./kafkaClient');
-
 function sendResponse(data, isSuccess, res){
 
     if (typeof data == 'object') {
@@ -13,11 +11,4 @@ function sendResponse(data, isSuccess, res){
     }
 }
 
-function sendMessageToQueue(search){
-    kafka.notify(search, function (data){
-        console.log('QUEUE SEND MESSAGE: ', data);
-    });
-}
-
 exports.sendResponse = sendResponse;
-exports.sendMessageToQueue = sendMessageToQueue;

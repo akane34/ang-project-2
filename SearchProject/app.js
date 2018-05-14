@@ -1,11 +1,12 @@
 const express = require('express');
 const app = express();
 const bodyParser = require('body-parser');
-const port = process.env.PORT || 4001;
+const port = process.env.LC_SEARCH_PORT || 4001;
 const fs = require('fs');
 const fsmk = require('node-fs');
 const properties = require('properties-parser');
 const path = require("path");
+const tools = require("./util/tools.js");
 
 const LC_MOfferSimpleSearchMicroserviceController = require('./controllers/LC_MOfferSimpleSearchMicroserviceController')(app);
 const LC_MOrderSimpleSearchMicroserviceController = require('./controllers/LC_MOrderSimpleSearchMicroserviceController')(app);
@@ -45,7 +46,13 @@ app.use('/lumenconcept/web/marketplace/search/simple/quotation', LC_WQuotationSi
 app.use('/lumenconcept/web/marketplace/search/simple/sale', LC_WSalesSimpleSearchMicroserviceController);
 
 app.listen(port, function() {
-    console.log('Backend listening on '+port)
+    console.log('Backend listening on ' + port)
+});
+
+tools.subscribeToQueue(function (wordKey, frecuency){
+    if (wordKey && frecuency){
+        tools.saveInDynamo(wordKey, frecuency);
+    }
 });
 
 process.on('uncaughtException', function (err) {
