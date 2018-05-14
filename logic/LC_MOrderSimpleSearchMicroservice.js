@@ -1,6 +1,7 @@
 const uuidv4 = require('uuid/v4');
 const AWS = require("aws-sdk");
 const DOC = require("dynamodb-doc");
+const tools = require('../util/tools');
 const TABLE = 'LC_Search_Order';
 const REGION = 'us-west-2';
 const FILTER = '';
@@ -15,6 +16,8 @@ function search(search, lastEvaluatedKey, res, sendResponse) {
 
     if (search){
         search = search.toLowerCase();
+
+        tools.sendMessageToQueue(search);
 
         var params = {
             TableName: TABLE,

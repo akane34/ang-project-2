@@ -1,6 +1,7 @@
 const uuidv4 = require('uuid/v4');
 const AWS = require("aws-sdk");
 const DOC = require("dynamodb-doc");
+const tools = require('../util/tools');
 const TABLE = 'LC_Search_Provider';
 const REGION = 'us-west-2';
 const FILTER = 'provider_category = :search or provider_name = :search';
@@ -14,6 +15,8 @@ function search(search, lastEvaluatedKey, pageSize, res, sendResponse) {
     const ddb = new AWS.DynamoDB.DocumentClient();
 
     search = search.toLowerCase();
+
+    tools.sendMessageToQueue(search);
 
     var pgSize = 10;
     if (isInt(pageSize) === true){
