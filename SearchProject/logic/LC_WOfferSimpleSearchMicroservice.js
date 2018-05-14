@@ -9,7 +9,7 @@ const FILTER = 'contains(product_references, :search) or contains(offer_tags, :s
 const SUCCESS = true;
 const  FAIL = false;
 
-function search(search, lastEvaluatedKey, pageSize, res, sendResponse) {
+function search(search, lastEvaluatedKey, pageSize, req, res, sendResponse) {
 
     AWS.config.update({region: REGION});
     const ddb = new AWS.DynamoDB.DocumentClient();
@@ -18,32 +18,40 @@ function search(search, lastEvaluatedKey, pageSize, res, sendResponse) {
 
     tools.sendMessageToQueue(search);
 
-    var pgSize = 10;
-    if (isInt(pageSize) === true){
-        pgSize = pageSize;
-        if (pgSize <= 0){
-            pgSize = 10;
+    tools.getSearchTrending(search, function (trending){
+        if (trending && trending.Count > 0){
+            tools.redirectResponse(req.baseUrl, search, lastEvaluatedKey, 0, trending.Items[0].wordKey, res);
+            return;
         }
-    }
+        else{
+            var pgSize = 10;
+            if (isInt(pageSize) === true){
+                pgSize = pageSize;
+                if (pgSize <= 0){
+                    pgSize = 10;
+                }
+            }
 
-    var params = {
-        TableName: TABLE,
-        FilterExpression : FILTER,
-        ExpressionAttributeValues : {":search" : search},
-        Limit: pgSize
-    };
+            var params = {
+                TableName: TABLE,
+                FilterExpression : FILTER,
+                ExpressionAttributeValues : {":search" : search},
+                Limit: pgSize
+            };
 
-    if (lastEvaluatedKey){
-        params.ExclusiveStartKey = {__ID: lastEvaluatedKey + ''};
-    }
+            if (lastEvaluatedKey){
+                params.ExclusiveStartKey = {__ID: lastEvaluatedKey + ''};
+            }
 
-    ddb.scan(params, function(err, data) {
-        if (err) {
-            console.log("Error", err);
-            sendResponse({"response":err}, FAIL, res);
-        } else {
-            console.log("Success", data);
-            sendResponse({"response":data}, SUCCESS, res);
+            ddb.scan(params, function(err, data) {
+                if (err) {
+                    console.log("Error", err);
+                    sendResponse({"response":err}, FAIL, res);
+                } else {
+                    console.log("Success", data);
+                    sendResponse({"response":data}, SUCCESS, res);
+                }
+            });
         }
     });
 }

@@ -8,7 +8,7 @@ module.exports =  (expressApp) => {
     router.get('/', function (req, res) {
         res.setHeader('Content-Type', 'application/json');
 
-        provider.search(req.query.search, req.query.lastEvaluatedKey, req.query.pageSize, res, tools.sendResponse);
+        provider.search(req.query.search, req.query.lastEvaluatedKey, req.query.pageSize, req, res, tools.sendResponse);
     });
 
     return router;
