@@ -3,8 +3,7 @@ const AWS = require("aws-sdk");
 const uuidv4 = require('uuid/v4');
 const url = require('url');
 const ADAPTATIVE_SERVER = 'https://zpx5g8rer6.execute-api.us-west-2.amazonaws.com';
-const TOPIC_PRODUCER_SEARCH = "lumenconcept.search";
-const TOPIC_PRODUCER_REQUEST = "lumenconcept.request";
+
 
 function sendResponse(data, isSuccess, res){
 
@@ -34,15 +33,9 @@ function redirectResponse(path, search, lastEvaluatedKey, pageSize, wordKey, res
     }));
 }
 
-function sendSearchMessageToQueue(search){
-    kafka.notify(search, TOPIC_PRODUCER_SEARCH, function (data){
-        console.log('QUEUE SEND MESSAGE ', TOPIC_PRODUCER_SEARCH, ': ', data);
-    });
-}
-
-function sendRequestMessageToQueue(iprequest){
-    kafka.notify(iprequest, TOPIC_PRODUCER_REQUEST, function (data){
-        console.log('QUEUE SEND MESSAGE ', TOPIC_PRODUCER_REQUEST, ': ', data);
+function sendMessageToQueue(search){
+    kafka.notify(search, function (data){
+        console.log('QUEUE SEND MESSAGE: ', data);
     });
 }
 
@@ -104,23 +97,9 @@ function subscribeToQueue(callback){
     kafka.suscribe(callback);
 }
 
-function streamingSubscribeToQueue(callback){
-    kafka.streamingSuscribe(function(err, data){
-        if (err)
-            callback();
-        else{
-            var json = JSON.parse(data);
-            callback(json.word, json.frecuency);
-        }
-    });
-}
-
-
 exports.sendResponse = sendResponse;
-exports.sendSearchMessageToQueue = sendSearchMessageToQueue;
-exports.sendRequestMessageToQueue = sendRequestMessageToQueue;
+exports.sendSearchMessageToQueue = sendMessageToQueue;
 exports.subscribeToQueue = subscribeToQueue;
 exports.redirectResponse = redirectResponse;
 exports.saveInDynamo = saveSearchTrending;
 exports.getSearchTrending = getSearchTrending;
-exports.streamingSubscribeToQueue = streamingSubscribeToQueue;

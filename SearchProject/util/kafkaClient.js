@@ -1,15 +1,16 @@
 var kafka = require('kafka-node');
 
 var kafkaConsumer;
+var kafkaStreamingConsumer;
 var kafkaProducer;
 
-const TOPIC_PRODUCER = "lumenconcept.search";
 const TOPIC_CONSUMER = "lumenconcept.trending";
 const KAFKA_HOST = process.env.KAFKA_SERVER + ':' + process.env.KAFKA_PORT;
 
 // public methods
 
 exports.suscribe = suscribe;
+exports.streamingSuscribe = streamingSuscribe;
 exports.notify = notify;
 
 // private methods
@@ -18,22 +19,47 @@ function suscribe(callback) {
     var consumer = getConsumer();
 
     consumer.on('message', function (message) {
-        if(callback) callback(message);
+        if(callback) callback(undefined, message);
     });
 
     consumer.on('error', function (err) {
         console.log('Error:',err);
+        if(callback) callback(err, undefined);
     });
 
     consumer.on('offsetOutOfRange', function (err) {
         console.log('OffsetOutOfRange:',err);
+        if(callback) callback(err, undefined);
     });
 }
 
-function notify(params, callback) {
+function streamingSuscribe(callback) {
+    var consumer = getStreamingConsumer();
+
+    consumer.on('message', function(message) {
+
+        console.log('streamingSuscribe arrive message: ', message);
+        var buf = new Buffer(message.value, 'binary'); // Read string into a buffer.
+        var decodedMessage = type.fromBuffer(buf.slice(0)); // Skip prefix.
+
+        if(callback) callback(undefined, decodedMessage);
+    });
+
+    consumer.on('offsetOutOfRange', function (err) {
+        console.log('OffsetOutOfRange:',err);
+        if(callback) callback(err, undefined);
+    });
+
+    consumer.on('error', function(err) {
+        console.log('error', err);
+        if(callback) callback(err, undefined);
+    });
+}
+
+function notify(params, topic, callback) {
     var producer = getProducer(),
         payloads = [
-            { topic: TOPIC_PRODUCER, messages: params, partition: 0 }
+            { topic: topic, messages: params, partition: 0 }
         ];
 
     producer.on('ready', function () {
@@ -46,7 +72,7 @@ function notify(params, callback) {
     });
 
     producer.send(payloads, function (err, data) {
-        console.log('Connecting to... ', KAFKA_HOST, ' topic:', TOPIC_PRODUCER);
+        console.log('Connecting to... ', KAFKA_HOST, ' topic:', topic);
         if(callback) callback(err || data);
     });
 }
@@ -61,6 +87,28 @@ function getConsumer() {
     }
 
     return kafkaConsumer;
+}
+
+function getStreamingConsumer() {
+    if (!kafkaStreamingConsumer) {
+        var HighLevelConsumer = kafka.HighLevelConsumer;
+        var Client = kafka.Client;
+
+        var client = new Client(KAFKA_HOST);
+        var topics = [{
+            topic: TOPIC_CONSUMER
+        }];
+
+        var options = {
+            autoCommit: true,
+            fetchMaxWaitMs: 1000,
+            fetchMaxBytes: 1024 * 1024,
+            encoding: 'buffer'
+        };
+        kafkaStreamingConsumer = new HighLevelConsumer(client, topics, options);
+    }
+
+    return kafkaStreamingConsumer;
 }
 
 function getProducer() {
