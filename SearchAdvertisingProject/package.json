@@ -1,0 +1,22 @@
+{
+  "name": "LumenConcept-SearchAdvertising",
+  "version": "1.0.0",
+  "description": "Search Advertising LumenConcept",
+  "main": "app.js",
+  "dependencies": {
+    "aws-sdk": "2.238.1",
+    "mongodb": "^3.0.2",
+    "uuid": "^3.2.1"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\"",
+    "start": "node app.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/akane34/ang-project-2"
+  }
+}

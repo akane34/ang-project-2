@@ -2,7 +2,8 @@ const kafka = require('./kafkaClient');
 const AWS = require("aws-sdk");
 const uuidv4 = require('uuid/v4');
 const url = require('url');
-const ADAPTATIVE_SERVER = 'https://zpx5g8rer6.execute-api.us-west-2.amazonaws.com';
+const SEARCH_ADAPTATIVE_SERVER = 'https://zpx5g8rer6.execute-api.us-west-2.amazonaws.com';
+const DoS_ADAPTATIVE_SERVER = 'https://zpx5g8rer6.execute-api.us-west-2.amazonaws.com';
 const TOPIC_PRODUCER_SEARCH = "lumenconcept.search";
 const TOPIC_PRODUCER_REQUEST = "lumenconcept.request";
 
@@ -19,17 +20,30 @@ function sendResponse(data, isSuccess, res){
     }
 }
 
-function redirectResponse(path, search, lastEvaluatedKey, pageSize, wordKey, res){
+function redirectSearchResponse(path, search, lastEvaluatedKey, pageSize, wordKey, res){
 
-    console.log('Redirect for Adaptative response. Server:', ADAPTATIVE_SERVER + path);
+    console.log('Redirect for Adaptative response. Server:', SEARCH_ADAPTATIVE_SERVER + path);
 
     res.redirect(url.format({
-        pathname: ADAPTATIVE_SERVER + path,
+        pathname: SEARCH_ADAPTATIVE_SERVER + path,
         query: {
             "search": search,
             "lastEvaluatedKey": lastEvaluatedKey,
             "pageSize": pageSize,
             "wordKey": wordKey
+        }
+    }));
+}
+
+function redirectRequestDoSResponse(path, ip, res){
+
+    console.log('Redirect for Adaptative response. Server:', SEARCH_ADAPTATIVE_SERVER + path);
+
+    res.redirect(url.format({
+        pathname: DoS_ADAPTATIVE_SERVER + path,
+        query: {
+            "ip": ip,
+            "timeL": Date.now()
         }
     }));
 }
@@ -75,6 +89,35 @@ function saveSearchTrending(wordKey, frecuency){
     });
 }
 
+function saveRequestDoS(ip, frecuency){
+    const TABLE = 'LC_Request_DoS';
+    const REGION = 'us-west-2';
+
+    AWS.config.update({region: REGION});
+    const ddb = new AWS.DynamoDB.DocumentClient();
+
+    var items = {
+        __ID : uuidv4() + '',
+        ip: ip,
+        frecuency: frecuency,
+        dateL: Date.now()
+    };
+
+    var params = {
+        TableName: TABLE,
+        Item: items
+    };
+
+    ddb.put(params, function(err, data) {
+        if (err) {
+            console.log("Error append dat from queue", ' Detail: ', err);
+        }
+        else {
+            console.log("Success append data from queue", ' Data: ', params.Item);
+        }
+    });
+}
+
 function getSearchTrending(wordKey, callback){
     const TABLE = 'LC_Search_Trending';
     const REGION = 'us-west-2';
@@ -100,8 +143,52 @@ function getSearchTrending(wordKey, callback){
     });
 }
 
-function subscribeToQueue(callback){
-    kafka.suscribe(callback);
+function getRequestDoS(ip, callback){
+    const TABLE = 'LC_Request_DoS';
+    const REGION = 'us-west-2';
+
+    AWS.config.update({region: REGION});
+    const ddb = new AWS.DynamoDB.DocumentClient();
+
+    var params = {
+        TableName: TABLE,
+        FilterExpression : 'contains(ip, :ip) and dateL >= :dateL',
+        ExpressionAttributeValues : {":ip" : ip, ":dateL": (Date.now() - 600000 )},
+        Limit: 6
+    };
+
+    ddb.scan(params, function(err, data) {
+        if (err) {
+            console.log("Error getRequestDoS: ", err);
+            callback(undefined);
+        } else {
+            console.log("Success getRequestDoS: ", data);
+            callback(data);
+        }
+    });
+}
+
+function subscribeToTrendingQueue(callback){
+    kafka.suscribeToTrending(function(err, data){
+        if (err)
+            callback();
+        else{
+            var json = JSON.parse(data.value);
+            callback(json.word, json.frequency);
+        }
+    });
+}
+
+function subscribeToDoSQueue(callback){
+    kafka.suscribeToDoS(function(err, data){
+        console.log('subscribeToDoSQueue: ', err || data);
+        if (err)
+            callback();
+        else{
+            var json = JSON.parse(data.value);
+            callback(json.word, json.frequency);
+        }
+    });
 }
 
 function streamingSubscribeToQueue(callback){
@@ -119,8 +206,12 @@ function streamingSubscribeToQueue(callback){
 exports.sendResponse = sendResponse;
 exports.sendSearchMessageToQueue = sendSearchMessageToQueue;
 exports.sendRequestMessageToQueue = sendRequestMessageToQueue;
-exports.subscribeToQueue = subscribeToQueue;
-exports.redirectResponse = redirectResponse;
-exports.saveInDynamo = saveSearchTrending;
+exports.subscribeToTrendingQueue = subscribeToTrendingQueue;
+exports.subscribeToDoSQueue = subscribeToDoSQueue;
+exports.redirectSearchResponse = redirectSearchResponse;
+exports.redirectRequestDoSResponse = redirectRequestDoSResponse;
+exports.saveSearchTrending = saveSearchTrending;
 exports.getSearchTrending = getSearchTrending;
 exports.streamingSubscribeToQueue = streamingSubscribeToQueue;
+exports.saveRequestDoS = saveRequestDoS;
+exports.getRequestDoS = getRequestDoS;

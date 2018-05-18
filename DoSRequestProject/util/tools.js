@@ -94,12 +94,12 @@ function getSearchTrending(wordKey, callback){
 }
 
 function subscribeToQueue(callback){
-    kafka.suscribe(callback);
+    kafka.suscribeToTrending(callback);
 }
 
 exports.sendResponse = sendResponse;
 exports.sendSearchMessageToQueue = sendMessageToQueue;
-exports.subscribeToQueue = subscribeToQueue;
-exports.redirectResponse = redirectResponse;
-exports.saveInDynamo = saveSearchTrending;
+exports.subscribeToTrendingQueue = subscribeToQueue;
+exports.redirectSearchResponse = redirectResponse;
+exports.saveSearchTrending = saveSearchTrending;
 exports.getSearchTrending = getSearchTrending;

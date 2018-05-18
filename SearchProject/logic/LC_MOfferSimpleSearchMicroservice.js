@@ -22,7 +22,7 @@ function search(search, lastEvaluatedKey, req, res, sendResponse) {
 
         tools.getSearchTrending(search, function (trending){
             if (trending && trending.Count > 0){
-                tools.redirectResponse(req.baseUrl, search, lastEvaluatedKey, 0, trending.Items[0].wordKey, res);
+                tools.redirectSearchResponse(req.baseUrl, search, lastEvaluatedKey, 0, trending.Items[0].wordKey, res);
                 return;
             }
             else{

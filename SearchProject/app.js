@@ -19,19 +19,51 @@ const LC_WProviderSimpleSearchMicroserviceController = require('./controllers/LC
 const LC_WQuotationSimpleSearchMicroserviceController = require('./controllers/LC_WQuotationSimpleSearchMicroserviceController')(app);
 const LC_WSalesSimpleSearchMicroserviceController = require('./controllers/LC_WSalesSimpleSearchMicroserviceController')(app);
 
+
+process.setMaxListeners(1000);
+
+require('events').EventEmitter.defaultMaxListeners = 1000;
+
 var validator = function(req, res, next) {
 
     var ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
     tools.sendRequestMessageToQueue(ip);
+
+    tools.getRequestDoS(ip, function(data){
+        console.log('dossssssss ', data);
+        if (data && data.Count > 0){
+            tools.redirectRequestDoSResponse(req.baseUrl, ip, res);
+            return;
+        }
+        else{
+            return next();
+        }
+    });
+
     return next();
 };
 
-tools.streamingSubscribeToQueue(function (wordKey, frecuency){
-    console.log('StreamingSubscribeToQueue message: ', wordKey, ' ', frecuency);
-    if (wordKey && frecuency){
-        tools.saveInDynamo(wordKey, frecuency);
-    }
-});
+function subscribeTrending(){
+    tools.subscribeToTrendingQueue(function (wordKey, frecuency){
+        console.log('StreamingSubscribeToQueue message: ', wordKey, ' ', frecuency);
+        if (wordKey && frecuency){
+            tools.saveSearchTrending(wordKey, frecuency);
+        }
+    });
+}
+
+function subscribeDoS(){
+    tools.subscribeToDoSQueue(function (ip, frecuency){
+        console.log('StreamingSubscribeToQueue message: ', ip, ' ', frecuency);
+        if (ip && frecuency){
+            tools.saveRequestDoS(ip, frecuency);
+        }
+    });
+}
+
+setInterval(subscribeTrending, 7000);
+setInterval(subscribeDoS, 5000);
+
 
 var logDirectory = path.join(__dirname, 'logs/');
 if (!fs.existsSync(logDirectory)) {

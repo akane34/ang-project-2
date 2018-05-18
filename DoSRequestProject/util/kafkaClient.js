@@ -9,7 +9,7 @@ const KAFKA_HOST = process.env.KAFKA_SERVER + ':' + process.env.KAFKA_PORT;
 
 // public methods
 
-exports.suscribe = suscribe;
+exports.suscribeToTrending = suscribe;
 exports.notify = notify;
 
 // private methods

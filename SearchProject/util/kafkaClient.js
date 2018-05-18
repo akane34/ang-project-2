@@ -1,22 +1,43 @@
 var kafka = require('kafka-node');
 
-var kafkaConsumer;
+var kafkaConsumerTrending;
+var kafkaConsumerDoS;
 var kafkaStreamingConsumer;
 var kafkaProducer;
 
-const TOPIC_CONSUMER = "lumenconcept.trending";
+const TOPIC_CONSUMER_TRENDING = "lumenconcept.trending2";
+const TOPIC_CONSUMER_DOS = "lumenconcept.dos";
 const KAFKA_HOST = process.env.KAFKA_SERVER + ':' + process.env.KAFKA_PORT;
 
 // public methods
 
-exports.suscribe = suscribe;
+exports.suscribeToTrending = suscribeToTrending;
+exports.suscribeToDoS = suscribeToDoS;
 exports.streamingSuscribe = streamingSuscribe;
 exports.notify = notify;
 
 // private methods
 
-function suscribe(callback) {
-    var consumer = getConsumer();
+function suscribeToTrending(callback) {
+    var consumer = getConsumerTrending();
+
+    consumer.on('message', function (message) {
+        if(callback) callback(undefined, message);
+    });
+
+    consumer.on('error', function (err) {
+        console.log('Error:',err);
+        if(callback) callback(err, undefined);
+    });
+
+    consumer.on('offsetOutOfRange', function (err) {
+        console.log('OffsetOutOfRange:',err);
+        if(callback) callback(err, undefined);
+    });
+}
+
+function suscribeToDoS(callback) {
+    var consumer = getConsumerDoS();
 
     consumer.on('message', function (message) {
         if(callback) callback(undefined, message);
@@ -77,16 +98,28 @@ function notify(params, topic, callback) {
     });
 }
 
-function getConsumer() {
-    if (!kafkaConsumer) {
+function getConsumerTrending() {
+    if (!kafkaConsumerTrending) {
         var Consumer = kafka.Consumer,
             client = new kafka.KafkaClient({kafkaHost: KAFKA_HOST}),
-            payloads = [{ topic: TOPIC_CONSUMER, offset: 0}],
+            payloads = [{ topic: TOPIC_CONSUMER_TRENDING, offset: 0}],
             options = {autoCommit: false};
-        kafkaConsumer = new Consumer(client, payloads, options);
+        kafkaConsumerTrending = new Consumer(client, payloads, options);
     }
 
-    return kafkaConsumer;
+    return kafkaConsumerTrending;
+}
+
+function getConsumerDoS() {
+    if (!kafkaConsumerDoS) {
+        var Consumer = kafka.Consumer,
+            client = new kafka.KafkaClient({kafkaHost: KAFKA_HOST}),
+            payloads = [{ topic: TOPIC_CONSUMER_DOS, offset: 0}],
+            options = {autoCommit: false};
+        kafkaConsumerDoS = new Consumer(client, payloads, options);
+    }
+
+    return kafkaConsumerDoS;
 }
 
 function getStreamingConsumer() {
@@ -96,7 +129,7 @@ function getStreamingConsumer() {
 
         var client = new Client(KAFKA_HOST);
         var topics = [{
-            topic: TOPIC_CONSUMER
+            topic: TOPIC_CONSUMER_TRENDING
         }];
 
         var options = {

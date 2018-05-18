@@ -31,9 +31,9 @@ app.listen(port, function() {
     console.log('Backend listening on ' + port)
 });
 
-tools.subscribeToQueue(function (wordKey, frecuency){
+tools.subscribeToTrendingQueue(function (wordKey, frecuency){
     if (wordKey && frecuency){
-        tools.saveInDynamo(wordKey, frecuency);
+        tools.saveSearchTrending(wordKey, frecuency);
     }
 });
 
