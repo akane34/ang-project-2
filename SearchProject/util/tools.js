@@ -186,7 +186,7 @@ function subscribeToDoSQueue(callback){
             callback();
         else{
             var json = JSON.parse(data.value);
-            callback(json.word, json.frequency);
+            callback(json.ip, json.frequency);
         }
     });
 }
