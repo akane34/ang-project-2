@@ -30,10 +30,9 @@ var validator = function(req, res, next) {
     tools.sendRequestMessageToQueue(ip);
 
     tools.getRequestDoS(ip, function(data){
-        console.log('dossssssss ', data);
         if (data && data.Count > 0){
             tools.redirectRequestDoSResponse(req.baseUrl, ip, res);
-            return;
+            return next();
         }
         else{
             return next();

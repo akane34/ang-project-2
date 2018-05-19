@@ -37,10 +37,10 @@ function redirectSearchResponse(path, search, lastEvaluatedKey, pageSize, wordKe
 
 function redirectRequestDoSResponse(path, ip, res){
 
-    console.log('Redirect for Adaptative response. Server:', SEARCH_ADAPTATIVE_SERVER + path);
+    console.log('Redirect for Adaptative response. Server:', DoS_ADAPTATIVE_SERVER + '/web/marketplace/dos-protection');
 
     res.redirect(url.format({
-        pathname: DoS_ADAPTATIVE_SERVER + path,
+        pathname: DoS_ADAPTATIVE_SERVER + '/web/marketplace/dos-protection',
         query: {
             "ip": ip,
             "timeL": Date.now()
